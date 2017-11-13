@@ -3,6 +3,7 @@ import asyncio
 import re
 from discord.ext import commands
 from .utils import checks
+import config
 
 if not discord.opus.is_loaded():
     # the 'opus' library here is opus.dll on windows
@@ -153,7 +154,7 @@ class Music:
             fmt = 'An error occurred while processing this request: ```py\n{}: {}\n```'
             await self.bot.send_message(ctx.message.channel, fmt.format(type(e).__name__, e))
         else:
-            player.volume = 0.6
+            player.volume = 0.1
             entry = VoiceEntry(ctx.message, player)
             await self.bot.say('Enqueued ' + str(entry))
             await state.songs.put(entry)
@@ -207,7 +208,6 @@ class Music:
         except:
             pass
 
-    @checks.is_owner()
     @commands.command(pass_context=True, no_pm=True)
     async def skip(self, ctx):
         """Vote to skip a song. The song requester can automatically skip.
@@ -223,6 +223,9 @@ class Music:
         if voter == state.current.requester:
             await self.bot.say('Requester requested skipping song...')
             state.skip()
+        elif voter.id == config.owner_id:
+            await self.bot.say('Skipping song.')
+            state.skip()
         elif voter.id not in state.skip_votes:
             state.skip_votes.add(voter.id)
             total_votes = len(state.skip_votes)
@@ -234,7 +237,6 @@ class Music:
         else:
             await self.bot.say('You have already voted to skip this song.')
 
-    @checks.is_owner()
     @commands.command(pass_context=True, no_pm=True)
     async def playing(self, ctx):
         """Shows info about the currently played song."""
