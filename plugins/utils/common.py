@@ -8,11 +8,11 @@ def pretty_print_time(time_s):
              ('minute', 60),
              ('second', 1)]
 
-    result = ""
+    result = []
     for name, length in times:
         val, time_s = divmod(time_s, length)
         if int(val) > 0:
-            result = result + f"{int(val)} {name}{'s' if val > 1 else ''} "
+            result.append(f"{int(val)} {name}{'s' if val > 1 else ''}")
             if int(time_s) <= 0:
                 break
-    return result
+    return ", ".join(result)
