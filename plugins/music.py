@@ -1,5 +1,6 @@
 import discord
 import asyncio
+import re
 from discord.ext import commands
 from .utils import checks
 
@@ -121,7 +122,6 @@ class Music:
 
         return True
 
-    @checks.is_owner()
     @commands.command(pass_context=True, no_pm=True)
     async def play(self, ctx, *, song : str):
         """Plays a song.
@@ -131,6 +131,10 @@ class Music:
         The list of supported sites can be found here:
         https://rg3.github.io/youtube-dl/supportedsites.html
         """
+
+        if not re.compile("^http(s){0,1}://(m\.|www\.){0,1}youtube\.com/watch\?v\=[A-Za-z0-9\-\_]+$").match(song):
+            await self.bot.say("Invalid URL specified.")
+            return
 
         state = self.get_voice_state(ctx.message.server)
         opts = {
