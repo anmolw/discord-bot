@@ -133,9 +133,10 @@ class Music:
         https://rg3.github.io/youtube-dl/supportedsites.html
         """
 
-        if not re.compile("^http(s){0,1}://(m\.|www\.){0,1}youtube\.com/watch\?v\=[A-Za-z0-9\-\_]+$").match(song):
-            await self.bot.say("Invalid URL specified.")
-            return
+        if re.compile("^http(s){0,1}://[A-Za-z\-]+\.[A-Za-z]+").match(song):
+            if not re.compile("^http(s){0,1}://(m\.|www\.){0,1}youtube\.com/watch\?v\=[A-Za-z0-9\-\_]+$").match(song):
+                await self.bot.say("Invalid URL specified.")
+                return
 
         state = self.get_voice_state(ctx.message.server)
         opts = {
@@ -170,14 +171,17 @@ class Music:
             player.volume = value / 100
             await self.bot.say('Set the volume to {:.0%}'.format(player.volume))
 
-    @checks.is_owner()
     @commands.command(pass_context=True, no_pm=True)
     async def pause(self, ctx):
         """Pauses the currently played song."""
         state = self.get_voice_state(ctx.message.server)
         if state.is_playing():
-            player = state.player
-            player.pause()
+            if ctx.message.author.id == state.current.requester.id:
+                player = state.player
+                player.pause()
+            elif ctx.message.author.id == config.owner_id:
+                player = state.player
+                player.pause()
 
     @checks.is_owner()
     @commands.command(pass_context=True, no_pm=True)
