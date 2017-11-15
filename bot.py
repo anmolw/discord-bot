@@ -1,10 +1,10 @@
-import discord
-import discord.ext.commands
 import asyncio
-import aiohttp
 import datetime
 import traceback
 import sys
+import discord
+import discord.ext.commands
+import aiohttp
 
 from plugins.utils import common
 from plugins.utils import checks
@@ -14,7 +14,6 @@ try:
     import uvloop
 except ImportError:
     print('Using default asyncio event loop')
-    pass
 else:
     print('Using uvloop')
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())

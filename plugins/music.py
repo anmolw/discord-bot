@@ -70,6 +70,8 @@ class Music:
     def __init__(self, bot):
         self.bot = bot
         self.voice_states = {}
+        self.url_pattern = re.compile("^http(?:s)?://[A-Za-z\-]+\.[A-Za-z]+")
+        self.youtube_pattern = re.compile("^http(?:s)?://(?:m\.|www\.)?youtube\.com/watch\?v\=[A-Za-z0-9\-\_]+$")
 
     def get_voice_state(self, server):
         state = self.voice_states.get(server.id)
@@ -133,8 +135,8 @@ class Music:
         https://rg3.github.io/youtube-dl/supportedsites.html
         """
 
-        if re.compile("^http(s){0,1}://[A-Za-z\-]+\.[A-Za-z]+").match(song):
-            if not re.compile("^http(s){0,1}://(m\.|www\.){0,1}youtube\.com/watch\?v\=[A-Za-z0-9\-\_]+$").match(song):
+        if self.url_pattern.match(song):
+            if not self.youtube_pattern.match(song):
                 await self.bot.say("Invalid URL specified.")
                 return
 

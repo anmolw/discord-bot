@@ -11,4 +11,4 @@ def is_owner():
 
 
 def trivia_whitelist():
-    return commands.check(lambda ctx: ctx.message.channel.id in config.trivia_whitelist)
+    return commands.check(lambda ctx: ctx.message.channel.id in config.trivia_whitelist or is_owner_check(ctx.message))
