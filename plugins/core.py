@@ -110,6 +110,17 @@ class Core:
         curr = datetime.datetime.utcnow()
         await self.bot.say(f"Bot uptime: {common.pretty_print_time((curr - self.bot.startup_time).total_seconds())}")
 
+    @checks.is_owner()
+    @commands.group(pass_context=True, hidden=True)
+    async def set(self, ctx):
+        if ctx.invoked_subcommand is None:
+            await self.bot.say("Error: No property specified")
+
+    @checks.is_owner()
+    @set.command()
+    async def name(self, new_username: str):
+        await self.bot.edit_profile(username=new_username)
+
 
 def setup(bot):
     bot.add_cog(Core(bot))
