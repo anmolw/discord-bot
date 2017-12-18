@@ -1,14 +1,15 @@
-from discord.ext import commands
-from discord import Game
 import asyncio
-from aiohttp import get
 import json
-import traceback
 import sys
-from aitertools import aiter
-from random import shuffle, randint, sample
-from timeit import default_timer as timer
+import traceback
 from html import unescape
+from random import randint, sample, shuffle
+from timeit import default_timer as timer
+
+from aiohttp import get
+from aitertools import aiter
+from discord import Game
+from discord.ext import commands
 
 from .utils import checks
 

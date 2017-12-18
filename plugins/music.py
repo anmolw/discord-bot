@@ -1,9 +1,12 @@
-import discord
 import asyncio
 import re
+
+import discord
 from discord.ext import commands
-from .utils import checks
+
 import config
+
+from .utils import checks
 
 if not discord.opus.is_loaded():
     # the 'opus' library here is opus.dll on windows

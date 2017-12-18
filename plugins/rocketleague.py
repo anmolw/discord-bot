@@ -1,9 +1,12 @@
-from discord.ext import commands
 import asyncio
-import aiohttp
-import config
 import io
 import re
+
+import aiohttp
+from discord.ext import commands
+
+import config
+
 from .utils import checks
 
 
