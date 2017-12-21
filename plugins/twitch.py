@@ -64,7 +64,7 @@ class Twitch:
     async def announce_stream(self, streamer, title, thumbnail_url, viewers):
         login_escaped = streamer.login.replace("_", "\_")
         # await self.bot.send_message(discord.Object(id=config.stream_channel), f"{login_escaped} just went live! Watch the stream at http://twitch.tv/{login_escaped}")
-        embed = discord.Embed(title=title, url=f"http://twitch.tv/{streamer.login}", colour=0x9114b1)
+        embed = discord.Embed(title=title, url=f"http://twitch.tv/{streamer.login}", colour=0x6441a4)
         embed.set_author(name=streamer.login, url=f"http://twitch.tv/{streamer.login}", icon_url=streamer.profile_image_url)
         embed.set_thumbnail(url=streamer.profile_image_url)
         embed.set_image(url=thumbnail_url.format(width=480, height=320))
