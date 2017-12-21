@@ -33,7 +33,6 @@ class Twitch:
         try:
             async with self.bot.http_session.get(users_endpoint, params=params, headers=headers) as response:
                 response_json = await response.json()
-                print(response_json)
                 for channel in response_json['data']:
                      self.streamers[channel['id']] = Streamer(channel['login'], channel['id'], channel['profile_image_url'])
             if self.poll_task is None:
@@ -51,8 +50,6 @@ class Twitch:
             try:
                 async with self.bot.http_session.get(streams_endpoint, params=params, headers=headers) as response:
                     response_json = await response.json()
-                    print(response.headers)
-                    print(response_json)
                     for stream in response_json['data']:
                         if stream['started_at'] != self.streamers[stream['user_id']].last_stream_start:
                             self.streamers[stream['user_id']].last_stream_start = stream['started_at']

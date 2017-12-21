@@ -24,7 +24,8 @@ load_plugins = [
     "plugins.rocketleague",
     "plugins.misc",
     "plugins.errorhandler",
-    "plugins.music"
+    "plugins.music",
+    "plugins.twitch"
 ]
 
 
