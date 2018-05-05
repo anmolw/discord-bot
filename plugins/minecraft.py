@@ -9,26 +9,37 @@ from .utils import checks
 
 class Minecraft:
     def __init__(self, bot):
-        self.bot: discord.ext.commands.Bot = bot
+        self.bot: commands.Bot = bot
         self.api_url = "https://api.digitalocean.com/v2/"
         self.auth_header = {"Authorization": f"Bearer {config.digitalocean_key}"}
         self.size_slug = "s-6vcpu-16gb"
         self.region_slug = "sgp1"
         self.busy = False
         self.server_running = False
+        self.minecraft_channel = self.bot.get_channel(config.minecraft_channel)
         self.status_message_obj = None
+        self.bot.loop.create_task(self.initialize_status())
         # self.current_operation =
 
-    @checks.has_role("minecraft")
-    @commands.group(aliases=["mc"], pass_context=True)
+    @checks.has_role("Minecraft")
+    @commands.group(aliases=["mc"])
     async def minecraft(self, ctx):
         if ctx.invoked_subcommand is None:
             pass
 
+    async def initialize_status(self):
+        droplet = await self.get_minecraft_droplet()
+        if droplet is None:
+            self.server_running = False
+            await self.update_status_embed("Server offline")
+        else:
+            self.server_running = True
+            await self.update_status_embed("Server running", ip=droplet["networks"]["v4"][0]["ip_address"])
+
     async def get_minecraft_droplet(self):
         response = await self.bot.http_session.get(
             self.api_url + "droplets?tag_name=minecraft", headers=self.auth_header)
-        if response.status_code == 200:
+        if response.status == 200:
             response_json = await response.json()
             if response_json["meta"]["total"] > 0:
                 return response_json['droplets'][0]
@@ -36,24 +47,24 @@ class Minecraft:
     async def get_latest_snapshot(self):
         response = await self.bot.http_session.get(
             self.api_url + "snapshots?resource_type=droplet", headers=self.auth_header)
-        if response.status_code == 200:
+        if response.status == 200:
             response_json = await response.json()
             for snapshot in response_json["snapshots"]:
                 if snapshot["name"].startswith("minecraft"):
                     return snapshot
 
     @checks.has_role("Minecraft")
-    @minecraft.command(pass_context=True)
+    @minecraft.command()
     async def start(self, ctx):
         if self.busy:
-            await self.bot.say("There is already a server start/stop operation in progress.")
+            await ctx.send("There is already a server start/stop operation in progress.")
             return
         if self.server_running:
-            await self.bot.say("The server is already running.")
+            await ctx.send("The server is already running.")
             return
 
         if (await self.get_minecraft_droplet()) is not None:
-            await self.bot.say("The server is already running.")
+            await ctx.send("The server is already running.")
             self.server_running = True
             return
 
@@ -74,30 +85,36 @@ class Minecraft:
         }
         response = await self.bot.http_session.post(
             self.api_url + "droplets", json=droplet_json, headers=self.auth_header)
-        if response.status_code == 202:
+        if response.status == 202:
+            json = await response.json()
+            print(json)
+            action_request = await self.bot.http_session.get(
+                json["links"]["actions"][0]["href"], headers=self.auth_header)
+            action = (await action_request.json())["action"]
+            await self.wait_until_complete(action)
+            new_droplet = await self.get_minecraft_droplet()
+            await self.update_status_embed("Server running", ip=new_droplet["networks"]["v4"][0]["ip_address"])
             self.busy = False
-            await self.update_status("Server running")
-            print(response.json())
 
     @checks.has_role("Minecraft")
-    @minecraft.command(pass_context=True)
+    @minecraft.command()
     async def stop(self, ctx):
         if self.busy:
-            await self.bot.say("There is already a server start/stop operation in progress.")
+            await ctx.send("There is already a server start/stop operation in progress.")
             return
         if not self.server_running:
-            await self.bot.say("The server is not running.")
+            await ctx.send("The server is not running.")
             return
 
         droplet = await self.get_minecraft_droplet()
 
         if droplet is None:
-            await self.bot.say("The server is not running.")
+            await ctx.send("The server is not running.")
             self.server_running = False
             return
 
         self.busy = True
-        current_snapshot = self.get_latest_snapshot()
+        current_snapshot = await self.get_latest_snapshot()
         response = await self.bot.http_session.post(
             self.api_url + f"droplets/{droplet['id']}/actions", json={"type": "shutdown"}, headers=self.auth_header)
         json = await response.json()
@@ -106,7 +123,7 @@ class Minecraft:
         await self.create_snapshot(droplet)
         await self.destroy_droplet(droplet)
         await self.delete_snapshot(current_snapshot)
-        await self.update_status("Server offline")
+        await self.update_status_embed("Server offline")
         self.server_running = False
         self.busy = False
 
@@ -128,41 +145,41 @@ class Minecraft:
                 "name": f"minecraft {now.strftime('%d-%m-%y %H:%M')}"
             },
             headers=self.auth_header)
-        if response.status_code in range(200, 300):
+        if response.status in range(200, 300):
             action = (await response.json())["action"]
             print("Created snapshot action")
-            await self.update_status("Creating snapshot")
+            await self.update_status_embed("Creating snapshot")
             await self.wait_until_complete(action)
-            await self.update_status("Created snapshot")
+            await self.update_status_embed("Created snapshot")
 
     async def destroy_droplet(self, droplet):
         response = await self.bot.http_session.delete(
             self.api_url + f"droplets/{droplet['id']}", headers=self.auth_header)
-        if response.status_code == 204:
+        if response.status == 204:
             print("Droplet destroyed")
 
     async def delete_snapshot(self, snapshot):
         snapshot_id = snapshot["id"]
         response = await self.bot.http_session.delete(
             self.api_url + f"snapshots/{snapshot_id}", headers=self.auth_header)
-        if response.status_code == 204:
+        if response.status == 204:
             print("Snapshot deleted")
 
     async def get_status_message(self):
-        async for message in self.bot.logs_from(discord.Object(id=config.minecraft_channel)):
-            if message.author.id == self.bot.user.id and message.embeds.length == 1:
+        async for message in self.minecraft_channel.history():
+            if message.author.id == self.bot.user.id and len(message.embeds) == 1:
                 self.status_message_obj = message
                 return message
 
-    async def update_status(self, status, ip=None):
-        embed = discord.Embed(title="Minecraft Server Status", timestamp=datetime.datetime.now())
+    async def update_status_embed(self, status, ip=None):
+        embed = discord.Embed(title="Minecraft Server Status", timestamp=datetime.datetime.utcnow())
         embed.add_field(name="Status", value=status)
         if ip is not None:
             embed.add_field(name="IP", value=ip)
         if self.status_message_obj is not None or (await self.get_status_message()) is not None:
-            await self.bot.edit_message(self.status_message_obj, embed=embed)
+            await self.status_message_obj.edit(embed=embed)
         else:
-            await self.bot.send_message(discord.Object(id=config.minecraft_channel), embed=embed)
+            await self.minecraft_channel.send(embed=embed)
 
 
 def setup(bot):
