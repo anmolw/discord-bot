@@ -25,14 +25,15 @@ class RocketLeague:
         if not reference:
             await self.bot.say(f'{ctx.message.author.mention} Please specify steamid64 as a parameter')
             return
-        async with self.bot.http_session.get(
-                self.api_baseurl + 'player?unique_id=' + str(reference) + '&platform_id=1',
-                headers=self.api_header) as response:
-            json_response = await response.json()
-            image_response = await self.bot.http_session.get(json_response['signatureUrl'])
-            image = discord.File(fp=io.BytesIO(await image_response.read()), filename='stats.png')
-            await ctx.send(file=image)
-            print(json_response)
+
+        async with ctx.channel.typing():
+            async with self.bot.http_session.get(
+                    self.api_baseurl + 'player?unique_id=' + str(reference) + '&platform_id=1',
+                    headers=self.api_header) as response:
+                json_response = await response.json()
+                image_response = await self.bot.http_session.get(json_response['signatureUrl'])
+                image = discord.File(fp=io.BytesIO(await image_response.read()), filename='stats.png')
+                await ctx.send(file=image)
 
     async def api_player_lookup(self, player, platform):
         pass

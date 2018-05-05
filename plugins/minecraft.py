@@ -25,7 +25,7 @@ class Minecraft:
     @commands.group(aliases=["mc"])
     async def minecraft(self, ctx):
         if ctx.invoked_subcommand is None:
-            pass
+            await ctx.send(f"Usage: minecraft/mc start|stop")
 
     async def initialize_status(self):
         droplet = await self.get_minecraft_droplet()
@@ -94,6 +94,7 @@ class Minecraft:
             await self.wait_until_complete(action)
             new_droplet = await self.get_minecraft_droplet()
             await self.update_status_embed("Server running", ip=new_droplet["networks"]["v4"][0]["ip_address"])
+            self.server_running = True
             self.busy = False
 
     @checks.has_role("Minecraft")
