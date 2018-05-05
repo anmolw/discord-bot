@@ -19,8 +19,7 @@ else:
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 load_plugins = [
-    "plugins.core", "plugins.trivia", "plugins.rocketleague", "plugins.misc", "plugins.errorhandler", "plugins.music",
-    "plugins.twitch"
+    "plugins.core", "plugins.trivia", "plugins.rocketleague", "plugins.misc", "plugins.errorhandler", "plugins.twitch"
 ]
 
 
@@ -49,12 +48,12 @@ async def on_message(message):
 
 
 @bot.command()
-async def time():
+async def time(ctx):
     """
     Displays the bot's local time
     """
     localtime = str(datetime.datetime.now())
-    await bot.say('The bot\'s local time is ' + localtime)
+    await ctx.send('The bot\'s local time is ' + localtime)
 
 
 if __name__ == '__main__':

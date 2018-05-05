@@ -15,7 +15,7 @@ async def on_command_error(self, error, ctx):
 
     if isinstance(error, discord.ext.commands.DisabledCommand):
         try:
-            await self.bot.send_message(ctx.message.channel, f'{ctx.command} has been disabled.')
+            await ctx.send(f'{ctx.command} has been disabled.')
         except:
             pass
         finally:
@@ -23,7 +23,7 @@ async def on_command_error(self, error, ctx):
 
     if isinstance(error, discord.ext.commands.NoPrivateMessage):
         try:
-            await self.bot.send_message(ctx.message.channel, f'{ctx.command} cannot be used in Private Messages.')
+            await ctx.send(f'{ctx.command} cannot be used in Private Messages.')
         except:
             pass
         finally:

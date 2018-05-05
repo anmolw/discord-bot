@@ -17,13 +17,13 @@ class Markov:
         self.bot: commands.Bot = bot
         self.models = {}
 
-    @commands.command(pass_context=True)
+    @commands.command()
     async def gen(self, ctx, num_sentences=3):
-        if not ctx.message.channel in self.models:
+        if not ctx.channel in self.models:
             await self.bot.get_command("mkmodel").invoke(ctx)
         result = ""
         for i in range(3):
-            sentence = self.models[ctx.message.channel].make_sentence()
+            sentence = self.models[ctx.channel].make_sentence()
             print(sentence)
             if result != "" and sentence is not None:
                 delim = " " if result.endswith(".") else ". "
@@ -32,15 +32,15 @@ class Markov:
                 result = result + sentence
         if not result:
             result = "I couldn't generate any sentences :("
-        await self.bot.say(result)
+        await ctx.send(result)
 
-    @checks.is_owner()
-    @commands.command(pass_context=True)
+    @commands.is_owner()
+    @commands.command()
     async def mkmodel(self, ctx, num_messages: int = 1000):
         corpus = ""
         count = 0
         authors = {}
-        async for message in self.bot.logs_from(ctx.message.channel, limit=num_messages):
+        async for message in self.bot.logs_from(ctx.channel, limit=num_messages):
             if not message.content.startswith("!") and not message.author.bot:
                 if not message.author in authors:
                     authors[message.author] = 1
@@ -59,12 +59,12 @@ class Markov:
             if n == limit:
                 break
 
-        output = f"Generated a markov model using the last {count} messages of {ctx.message.channel.mention}."
+        output = f"Generated a markov model using the last {count} messages of {ctx.channel.mention}."
         if n >= 1:
             output = output + " Top contributors: " + result
         markov_model = await self.bot.loop.run_in_executor(None, markovify.NewlineText, corpus)
-        self.models[ctx.message.channel] = markov_model
-        await self.bot.say(output)
+        self.models[ctx.channel] = markov_model
+        await ctx.send(output)
 
     async def on_message(self, message):
         if message.channel in self.models and not message.content.startswith("!") and not message.author.bot:
@@ -82,7 +82,7 @@ class Markov:
                         result = result + delim
                     if sentence is not None:
                         result = result + sentence
-                await self.bot.send_message(message.channel, result)
+                await message.channel.send(result)
 
 
 def setup(bot):

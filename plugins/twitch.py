@@ -25,9 +25,10 @@ class Twitch:
         self.bot: commands.Bot = bot
         self.poll_task = None
         self.streamers = {}
+        self.announce_channel = self.bot.get_channel(config.stream_channel)
         self.bot.loop.create_task(self.initialize_streamers())
 
-    # @checks.is_owner()
+    # @commands.is_owner()
     # @commands.command(name="ttest", hidden=True)
     async def initialize_streamers(self):
         headers = {"Client-ID": f"{config.twitch_client_id}"}
@@ -44,7 +45,7 @@ class Twitch:
         except Exception as e:
             print(f"{type(e).__name__}: {e}", file=sys.stderr)
 
-    # @checks.is_owner()
+    # @commands.is_owner()
     # @commands.command(hidden=True)
     async def poll(self):
         while True:
@@ -71,13 +72,13 @@ class Twitch:
             url=f"http://twitch.tv/{streamer.login}",
             colour=0x6441a4,
             timestamp=datetime.datetime.utcnow())
+
         embed.set_author(
             name=streamer.login, url=f"http://twitch.tv/{streamer.login}", icon_url=streamer.profile_image_url)
         embed.set_thumbnail(url=streamer.profile_image_url)
         embed.set_image(url=thumbnail_url.format(width=480, height=320))
         embed.add_field(name="Viewers", value=str(viewers), inline=True)
-        await self.bot.send_message(
-            discord.Object(id=config.stream_channel), f"{streamer.login} is live on twitch!", embed=embed)
+        await self.announce_channel.send(f"{streamer.login} is live on twitch!", embed=embed)
 
     def __unload(self):
         if self.poll_task is not None:

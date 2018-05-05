@@ -6,8 +6,6 @@ from html import unescape
 from random import randint, sample, shuffle
 from timeit import default_timer as timer
 
-from aiohttp import get
-from aitertools import aiter
 from discord import Game
 from discord.ext import commands
 
@@ -23,7 +21,8 @@ class Trivia:
         self.last_response_time = None
 
     @checks.trivia_whitelist()
-    @commands.command(pass_context=True, aliases=['t'], no_pm=True)
+    @commands.guild_only()
+    @commands.command(aliases=['t'])
     async def trivia(self, ctx, num_questions: int = 1, *, args: str = None):
         """
         Play a game of trivia. Questions are multiple choice, and can be responded to by either typing out the answer, or # followed by the answer number.
@@ -34,34 +33,34 @@ class Trivia:
         elif num_questions > 10:
             num_questions = 10
         if num_questions != 1:
-            await self.bot.say(f'Starting new game with {num_questions} questions.')
+            await ctx.send(f'Starting new game with {num_questions} questions.')
 
-        if ctx.message.channel in self.ongoing_games:
-            await self.bot.say(f'There is already a trivia game in progress in #{ctx.message.channel}')
+        if ctx.channel in self.ongoing_games:
+            await ctx.send(f'There is already a trivia game in progress in #{ctx.channel}')
             return
-        self.ongoing_games.add(ctx.message.channel)
-        # await bot.say(f'#{ctx.message.channel} added to ongoing games')
+        self.ongoing_games.add(ctx.channel)
+        # await bot.say(f'#{ctx.channel} added to ongoing games')
         await self._update_trivia_presence()
         if args and 'test' in args:
-            await self._start_game(ctx.message.channel, num_questions, True)
+            await self._start_game(ctx.channel, num_questions, True)
         else:
-            await self._start_game(ctx.message.channel, num_questions, False)
-        self.ongoing_games.remove(ctx.message.channel)
+            await self._start_game(ctx.channel, num_questions, False)
+        self.ongoing_games.remove(ctx.channel)
         await self._update_trivia_presence()
 
-    @checks.is_owner()
+    @commands.is_owner()
     @commands.command(hidden=True)
-    async def tq(self):
+    async def tq(self, ctx):
         questions = await self._get_questions(1)
-        await self.bot.say('__Category__: ' + questions[0]['category'])
-        await self.bot.say('__Question__: ' + questions[0]['question'])
-        await self.bot.say('__Choices__: ' + _format_answers(questions[0]))
+        await ctx.send('__Category__: ' + questions[0]['category'])
+        await ctx.send('__Question__: ' + questions[0]['question'])
+        await ctx.send('__Choices__: ' + _format_answers(questions[0]))
 
     async def _start_game(self, channel, num_questions, hangman=False):
         try:
             questions = await self._get_questions(num_questions)
         except Exception as e:
-            await self.bot.send_message(channel, f"Error encountered while fetching questions: {type(e).__name__}")
+            await channel.send(f"Error encountered while fetching questions: {type(e).__name__}")
             traceback.print_exc(file=sys.stderr)
             return
 
@@ -77,16 +76,21 @@ class Trivia:
                 question_fmt_string = question_fmt_string + "\n" + _format_answers(choices)
                 # await self.bot.send_message(channel, '__Choices__: '+_format_answers(choices))
 
-            await self.bot.send_message(channel, question_fmt_string)
+            await channel.send(question_fmt_string)
             time_asked = timer()
 
-            def guess_check(g):
-                return g.author != self.bot.user
+            def guess_check(ctx):
+                return ctx.author != self.bot.user and ctx.channel == channel
 
             while True:
-                guess = await self.bot.wait_for_message(channel=channel, timeout=5.0, check=guess_check)
+                guess = None
+                try:
+                    guess = await self.bot.wait_for('message', timeout=60.0, check=guess_check)
+                except asyncio.TimeoutError:
+                    pass
+
                 if timer() - time_asked > 60:
-                    await self.bot.send_message(channel, f"Time's up! The answer was: {question['correct_answer']}")
+                    await channel.send(f"Time's up! The answer was: {question['correct_answer']}")
                     if hangman:
                         hint_task.cancel()
                     break
@@ -106,28 +110,28 @@ class Trivia:
 
     async def _congratulate(self, guess):
         print('Correct answer!')
-        await self.bot.add_reaction(guess, '\N{WHITE HEAVY CHECK MARK}')
-        await self.bot.send_message(guess.channel, f'Correct answer, {guess.author.mention}!')
+        await guess.add_reaction('\N{WHITE HEAVY CHECK MARK}')
+        await guess.channel.send(f'Correct answer, {guess.author.mention}!')
 
-    @checks.is_owner()
+    @commands.is_owner()
     @commands.command(pass_context=True, hidden=True)
     async def htest(self, ctx, *, answer):
-        await self.bot.say("Creating hint task")
-        task = self.bot.loop.create_task(self._hint_task(ctx.message.channel, answer))
+        await ctx.send("Creating hint task")
+        task = self.bot.loop.create_task(self._hint_task(ctx.channel, answer))
 
-    @checks.is_owner()
+    @commands.is_owner()
     @commands.command(hidden=True)
-    async def tdebug(self):
-        await self.bot.say(f'API token: {self.token} # of requests: {self.request_count}')
+    async def tdebug(self, ctx):
+        await ctx.send(f'API token: {self.token} # of requests: {self.request_count}')
 
-    @checks.is_owner()
-    @commands.command(pass_context=True, hidden=True)
+    @commands.is_owner()
+    @commands.command(hidden=True)
     async def htest2(self, ctx, *, answer):
-        await self.bot.say("Creating hint task")
-        task = self.bot.loop.create_task(self._hint_task_v2(ctx.message.channel, answer))
+        await ctx.send("Creating hint task")
+        task = self.bot.loop.create_task(self._hint_task_v2(ctx.channel, answer))
 
     async def _hint_task(self, channel, answer):
-        await self.bot.send_message(channel, "Hint task created")
+        await channel.send("Hint task created")
         answer = answer.strip()
         hint_string_source = ['\_ '] * len(answer)
         revealed_chars = []
@@ -143,10 +147,10 @@ class Trivia:
                     hint_string_source[temp_char] = answer[temp_char]
                     reveal_now = reveal_now - 1
             hint_string = "".join(hint_string_source)
-            await self.bot.send_message(channel, f"Hint: {hint_string} T+{str(int(timer() - start_time))}s")
+            await channel.send(f"Hint: {hint_string} T+{str(int(timer() - start_time))}s")
 
     async def _hint_task_v2(self, channel, answer):
-        await self.bot.send_message(channel, "Hint task created")
+        await channel.send("Hint task created")
         answer = answer.strip()
         hint_reveal_pool = [i for i in range(len(answer)) if answer[i].isdigit() or answer[i].isalpha()]
         hint_string_source = ['\_ ' if elem.isdigit() or elem.isalpha() else elem.replace(' ', '  ') for elem in answer]
@@ -161,14 +165,15 @@ class Trivia:
                     hint_reveal_pool.remove(elem)
                     hint_string_source[elem] = answer[elem]
             hint_string = "".join(hint_string_source)
-            await self.bot.send_message(channel, f"Hint: {hint_string} T+{str(int(timer() - start_time))}s")
+            await channel.send(f"Hint: {hint_string} T+{str(int(timer() - start_time))}s")
 
     async def _update_trivia_presence(self):
-        if not self.ongoing_games:
-            await self.bot.change_presence(game=None)
-        else:
-            num_games = len(self.ongoing_games)
-            await self.bot.change_presence(game=Game(name=f'{num_games} Trivia Game{"s" if num_games > 1 else ""}'))
+        pass
+        # if not self.ongoing_games:
+        #     await self.bot.change_presence(game=None)
+        # else:
+        #     num_games = len(self.ongoing_games)
+        #     await self.bot.change_presence(game=Game(name=f'{num_games} Trivia Game{"s" if num_games > 1 else ""}'))
 
     async def _get_questions(self, num_questions=10, category=None, multiple_choice=True):
         params = {'amount': num_questions, 'type': 'multiple', 'encoding': 'base64'}
@@ -178,8 +183,7 @@ class Trivia:
 
         params['token'] = self.token
 
-        async with self.bot.http_session.get(
-                'https://opentdb.com/api.php', params=params, encoding='base64') as response:
+        async with self.bot.http_session.get('https://opentdb.com/api.php', params=params) as response:
             json_response = await response.json()
             self.last_response_time = timer()
             self.request_count += 1
