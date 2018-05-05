@@ -19,12 +19,7 @@ else:
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 load_plugins = [
-    "plugins.core",
-    "plugins.trivia",
-    "plugins.rocketleague",
-    "plugins.misc",
-    "plugins.errorhandler",
-    "plugins.music",
+    "plugins.core", "plugins.trivia", "plugins.rocketleague", "plugins.misc", "plugins.errorhandler", "plugins.music",
     "plugins.twitch"
 ]
 

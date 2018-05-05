@@ -73,7 +73,6 @@ class Core:
             delete_list.append(ctx.message)
             await self.bot.delete_messages(delete_list)
 
-
     @checks.is_owner()
     @commands.command(hidden=True)
     async def game(self, *, game_name):
@@ -88,7 +87,7 @@ class Core:
             'channel': ctx.message.channel,
             'author': ctx.message.author,
             'server': ctx.message.server
-            }
+        }
         env.update(globals())
         result = eval(expression, env)
         if inspect.isawaitable(result):

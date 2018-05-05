@@ -170,20 +170,16 @@ class Trivia:
             num_games = len(self.ongoing_games)
             await self.bot.change_presence(game=Game(name=f'{num_games} Trivia Game{"s" if num_games > 1 else ""}'))
 
-
     async def _get_questions(self, num_questions=10, category=None, multiple_choice=True):
-        params = {
-            'amount': num_questions,
-            'type': 'multiple',
-            'encoding': 'base64'
-        }
+        params = {'amount': num_questions, 'type': 'multiple', 'encoding': 'base64'}
 
         if not self.token or (self.last_response_time and (timer() - self.last_response_time >= 21600)):
             await self._request_token()
 
         params['token'] = self.token
 
-        async with self.bot.http_session.get('https://opentdb.com/api.php', params=params, encoding='base64') as response:
+        async with self.bot.http_session.get(
+                'https://opentdb.com/api.php', params=params, encoding='base64') as response:
             json_response = await response.json()
             self.last_response_time = timer()
             self.request_count += 1
@@ -194,7 +190,6 @@ class Trivia:
                     question['incorrect_answers'][i] = unescape(question['incorrect_answers'][i])
             print(json_response)
             return json_response['results']
-
 
     async def _request_token(self):
         # params = {'command': 'request'}
@@ -207,11 +202,7 @@ class Trivia:
 
 
 def _score_answer(difficulty, answer_time, game_type, num_guesses):
-    difficulty_mapping = {
-        "easy": 0.75,
-        "medium": 1,
-        "hard": 1.25
-    }
+    difficulty_mapping = {"easy": 0.75, "medium": 1, "hard": 1.25}
     base_score = 10
     if num_guesses > 1 and game_type == "":
         return 0

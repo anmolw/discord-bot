@@ -12,10 +12,11 @@ from .utils import checks
 
 class Markov:
     """Fun little plugin that generates random sentences using markov chains"""
+
     def __init__(self, bot):
         self.bot: commands.Bot = bot
         self.models = {}
-    
+
     @commands.command(pass_context=True)
     async def gen(self, ctx, num_sentences=3):
         if not ctx.message.channel in self.models:
@@ -32,10 +33,10 @@ class Markov:
         if not result:
             result = "I couldn't generate any sentences :("
         await self.bot.say(result)
-    
+
     @checks.is_owner()
     @commands.command(pass_context=True)
-    async def mkmodel(self, ctx, num_messages: int=1000):
+    async def mkmodel(self, ctx, num_messages: int = 1000):
         corpus = ""
         count = 0
         authors = {}
@@ -60,16 +61,16 @@ class Markov:
 
         output = f"Generated a markov model using the last {count} messages of {ctx.message.channel.mention}."
         if n >= 1:
-            output = output + " Top contributors: "+ result
+            output = output + " Top contributors: " + result
         markov_model = await self.bot.loop.run_in_executor(None, markovify.NewlineText, corpus)
         self.models[ctx.message.channel] = markov_model
         await self.bot.say(output)
-    
 
     async def on_message(self, message):
         if message.channel in self.models and not message.content.startswith("!") and not message.author.bot:
             temp_model = markovify.NewlineText(message.content)
-            new_model = await self.bot.loop.run_in_executor(None, markovify.combine, [temp_model, self.models[message.channel]], [1, 1])
+            new_model = await self.bot.loop.run_in_executor(None, markovify.combine,
+                                                            [temp_model, self.models[message.channel]], [1, 1])
             self.models[message.channel] = new_model
 
             if random.uniform(0, 1.0) >= 0.85:
@@ -82,7 +83,6 @@ class Markov:
                     if sentence is not None:
                         result = result + sentence
                 await self.bot.send_message(message.channel, result)
-
 
 
 def setup(bot):

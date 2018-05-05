@@ -14,9 +14,7 @@ class RocketLeague:
     def __init__(self, bot):
         self.bot = bot
         self.api_baseurl = "https://api.rocketleaguestats.com/v1/"
-        self.api_header = {
-            'authorization': config.rlstats_key
-        }
+        self.api_header = {'authorization': config.rlstats_key}
 
     @commands.command(pass_context=True)
     async def rl(self, ctx, reference: str = None):
@@ -26,8 +24,9 @@ class RocketLeague:
         if not reference:
             await self.bot.say(f'{ctx.message.author.mention} Please specify steamid64 as a parameter')
             return
-        async with self.bot.http_session.get(self.api_baseurl + 'player?unique_id=' + str(reference) + '&platform_id=1',
-                                             headers=self.api_header) as response:
+        async with self.bot.http_session.get(
+                self.api_baseurl + 'player?unique_id=' + str(reference) + '&platform_id=1',
+                headers=self.api_header) as response:
             json_response = await response.json()
             image_response = await aiohttp.get(json_response['signatureUrl'])
             image_data = io.BytesIO(await image_response.read())
