@@ -40,7 +40,7 @@ class Markov:
         corpus = ""
         count = 0
         authors = {}
-        async for message in self.bot.logs_from(ctx.channel, limit=num_messages):
+        async for message in ctx.channel.history(limit=num_messages):
             if not message.content.startswith("!") and not message.author.bot:
                 if not message.author in authors:
                     authors[message.author] = 1
