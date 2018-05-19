@@ -17,6 +17,21 @@ class Markov:
         self.bot: commands.Bot = bot
         self.models = {}
 
+    def is_suitable(self, message):
+        disallowed_prefixes = ['!', '~']
+        for prefix in disallowed_prefixes:
+            if message.content.startswith(prefix):
+                return False
+        if not message.author.bot:
+            return True
+
+    def delim_for(self, result):
+        result = result.strip()
+        if result.endswith(".") or result.endswith("?"):
+            return " "
+        else:
+            return ". "
+
     @commands.command()
     async def gen(self, ctx, num_sentences=3):
         if not ctx.channel in self.models:
@@ -26,8 +41,7 @@ class Markov:
             sentence = self.models[ctx.channel].make_sentence()
             print(sentence)
             if result != "" and sentence is not None:
-                delim = " " if result.endswith(".") else ". "
-                result = result + delim
+                result = result + self.delim_for(result)
             if sentence is not None:
                 result = result + sentence
         if not result:
@@ -41,7 +55,7 @@ class Markov:
         count = 0
         authors = {}
         async for message in ctx.channel.history(limit=num_messages):
-            if not message.content.startswith("!") and not message.author.bot:
+            if self.is_suitable(message):
                 if not message.author in authors:
                     authors[message.author] = 1
                 else:
@@ -67,19 +81,18 @@ class Markov:
         await ctx.send(output)
 
     async def on_message(self, message):
-        if message.channel in self.models and not message.content.startswith("!") and not message.author.bot:
+        if message.channel in self.models and self.is_suitable(message):
             temp_model = markovify.NewlineText(message.content)
             new_model = await self.bot.loop.run_in_executor(None, markovify.combine,
                                                             [temp_model, self.models[message.channel]], [1, 1])
             self.models[message.channel] = new_model
 
-            if random.uniform(0, 1.0) >= 0.85:
+            if random.uniform(0, 1.0) >= 0.85 or self.bot.user in message.mentions:
                 result = ""
                 for i in range(3):
                     sentence = self.models[message.channel].make_sentence()
                     if result != "" and sentence is not None:
-                        delim = " " if result.endswith(".") else ". "
-                        result = result + delim
+                        result = result + self.delim_for(result)
                     if sentence is not None:
                         result = result + sentence
                 await message.channel.send(result)
