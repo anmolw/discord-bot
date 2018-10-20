@@ -12,8 +12,8 @@ class Minecraft:
         self.bot: commands.Bot = bot
         self.api_url = "https://api.digitalocean.com/v2/"
         self.auth_header = {"Authorization": f"Bearer {config.digitalocean_key}"}
-        self.size_slug = "s-6vcpu-16gb"
-        self.region_slug = "sgp1"
+        self.size_slug = "s-4vcpu-8gb"
+        self.region_slug = "blr1"
         self.busy = False
         self.server_running = False
         self.minecraft_channel = self.bot.get_channel(config.minecraft_channel)
