@@ -8,17 +8,22 @@ import markovify
 from discord.ext import commands
 
 from .utils import checks
+import config
 
 
-class Markov:
+class Markov(commands.Cog):
     """Fun little plugin that generates random sentences using markov chains"""
 
     def __init__(self, bot):
         self.bot: commands.Bot = bot
         self.models = {}
+        for channel, count in config.markov_channels:
+            self.bot.loop.create_task(
+                self._create_model(self.bot.get_channel(channel), count)
+            )
 
     def is_suitable(self, message):
-        disallowed_prefixes = ['!', '~']
+        disallowed_prefixes = ["!", "~"]
         for prefix in disallowed_prefixes:
             if message.content.startswith(prefix):
                 return False
@@ -48,13 +53,11 @@ class Markov:
             result = "I couldn't generate any sentences :("
         await ctx.send(result)
 
-    @commands.is_owner()
-    @commands.command()
-    async def mkmodel(self, ctx, num_messages: int = 1000):
+    async def _create_model(self, channel, num_messages):
         corpus = ""
         count = 0
         authors = {}
-        async for message in ctx.channel.history(limit=num_messages):
+        async for message in channel.history(limit=num_messages):
             if self.is_suitable(message):
                 if not message.author in authors:
                     authors[message.author] = 1
@@ -64,27 +67,42 @@ class Markov:
                 count += 1
 
         authors = sorted(authors.items(), key=itemgetter(1), reverse=True)
-        limit = 3
-        n = 0
+        markov_model = await self.bot.loop.run_in_executor(
+            None, markovify.NewlineText, corpus
+        )
+        self.models[channel] = markov_model
+        return count, authors
+
+    @commands.is_owner()
+    @commands.command()
+    async def mkmodel(self, ctx, num_messages: int = 1000):
+        count, authors = await self._create_model(ctx.channel, num_messages)
         result = ""
+        limit = 3
         for author in authors:
             n += 1
-            result = result + f"{n}. {author[0].mention}: {(author[1]/count) * 100:.2f}% "
+            result = (
+                result + f"{n}. {author[0].mention}: {(author[1]/count) * 100:.2f}% "
+            )
             if n == limit:
                 break
 
         output = f"Generated a markov model using the last {count} messages of {ctx.channel.mention}."
         if n >= 1:
             output = output + " Top contributors: " + result
-        markov_model = await self.bot.loop.run_in_executor(None, markovify.NewlineText, corpus)
-        self.models[ctx.channel] = markov_model
+
         await ctx.send(output)
 
+    @commands.Cog.listener()
     async def on_message(self, message):
         if message.channel in self.models and self.is_suitable(message):
             temp_model = markovify.NewlineText(message.content)
-            new_model = await self.bot.loop.run_in_executor(None, markovify.combine,
-                                                            [temp_model, self.models[message.channel]], [1, 1])
+            new_model = await self.bot.loop.run_in_executor(
+                None,
+                markovify.combine,
+                [temp_model, self.models[message.channel]],
+                [1, 1],
+            )
             self.models[message.channel] = new_model
 
             if random.uniform(0, 1.0) >= 0.85 or self.bot.user in message.mentions:

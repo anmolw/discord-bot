@@ -11,7 +11,7 @@ from discord.ext import commands
 from .utils import checks, common
 
 
-class Core:
+class Core(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -19,41 +19,41 @@ class Core:
     @commands.command(hidden=True)
     async def load(self, ctx, plugin: str = None):
         if plugin:
-            await ctx.send(f'Attempting to load {plugin}')
+            await ctx.send(f"Attempting to load {plugin}")
             try:
-                self.bot.load_extension('plugins.' + plugin)
+                self.bot.load_extension("plugins." + plugin)
             except Exception as e:
-                await ctx.send(f'Could not load {plugin}')
+                await ctx.send(f"Could not load {plugin}")
                 traceback.print_exc(file=sys.stdout)
             else:
-                await ctx.send('\N{WHITE HEAVY CHECK MARK}')
+                await ctx.send("\N{WHITE HEAVY CHECK MARK}")
 
     @commands.is_owner()
     @commands.command(hidden=True)
     async def reload(self, ctx, plugin: str = None):
         if plugin:
-            await ctx.send(f'Attempting reload of {plugin}')
+            await ctx.send(f"Attempting reload of {plugin}")
             try:
-                self.bot.unload_extension('plugins.' + plugin)
-                self.bot.load_extension('plugins.' + plugin)
+                self.bot.unload_extension("plugins." + plugin)
+                self.bot.load_extension("plugins." + plugin)
             except Exception as e:
-                await ctx.send(f'Could not load {plugin}')
+                await ctx.send(f"Could not load {plugin}")
                 traceback.print_exc(file=sys.stdout)
             else:
-                await ctx.send('\N{WHITE HEAVY CHECK MARK}')
+                await ctx.send("\N{WHITE HEAVY CHECK MARK}")
 
     @commands.is_owner()
     @commands.command(hidden=True)
     async def unload(self, ctx, plugin: str = None):
         if plugin:
-            await ctx.send(f'Attempting to unload {plugin}')
+            await ctx.send(f"Attempting to unload {plugin}")
             try:
-                self.bot.unload_extension('plugins.' + plugin)
+                self.bot.unload_extension("plugins." + plugin)
             except Exception as e:
-                await ctx.send(f'Could not unload {plugin}')
+                await ctx.send(f"Could not unload {plugin}")
                 traceback.print_exc(file=sys.stdout)
             else:
-                await ctx.send('\N{WHITE HEAVY CHECK MARK}')
+                await ctx.send("\N{WHITE HEAVY CHECK MARK}")
 
     @commands.is_owner()
     @commands.command(hidden=True)
@@ -82,25 +82,32 @@ class Core:
     @commands.command(hidden=True, name="eval")
     async def evaluate(self, ctx, *, expression):
         env = {
-            'bot': self.bot,
-            'message': ctx.message,
-            'channel': ctx.channel,
-            'author': ctx.message.author,
-            'guild': ctx.guild
+            "bot": self.bot,
+            "message": ctx.message,
+            "channel": ctx.channel,
+            "author": ctx.message.author,
+            "guild": ctx.guild,
         }
         env.update(globals())
         result = eval(expression, env)
         if inspect.isawaitable(result):
             result = await result
-        await ctx.send(f'Result: {result}')
+        await ctx.send(f"Result: {result}")
 
     @commands.is_owner()
     @commands.command(hidden=True, name="exec")
     async def execute(self, ctx, *, expression):
-        env = {'bot': self.bot}
+        env = {
+            "bot": self.bot,
+            "message": ctx.message,
+            "channel": ctx.channel,
+            "author": ctx.message.author,
+            "guild": ctx.guild,
+        }
+        env.update(globals())
         result = exec(expression)
         if result:
-            await ctx.send(f'Result: {result}')
+            await ctx.send(f"Result: {result}")
 
     @commands.is_owner()
     @commands.command(hidden=True)
@@ -108,7 +115,9 @@ class Core:
         # uptime_result = str(system('uptime'))
         # await ctx.send('System uptime: '+uptime_result)
         curr = datetime.datetime.utcnow()
-        await ctx.send(f"Bot uptime: {common.pretty_print_time((curr - self.bot.startup_time).total_seconds())}")
+        await ctx.send(
+            f"Bot uptime: {common.pretty_print_time((curr - self.bot.startup_time).total_seconds())}"
+        )
 
     @commands.is_owner()
     @commands.group(hidden=True)

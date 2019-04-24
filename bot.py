@@ -13,14 +13,20 @@ from plugins.utils import checks, common
 try:
     import uvloop
 except ImportError:
-    print('Using default asyncio event loop')
+    print("Using default asyncio event loop")
 else:
-    print('Using uvloop')
+    print("Using uvloop")
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 load_plugins = [
-    "plugins.core", "plugins.trivia", "plugins.rocketleague", "plugins.misc", "plugins.errorhandler", "plugins.twitch",
-    "plugins.minecraft"
+    "plugins.core",
+    "plugins.trivia",
+    "plugins.rocketleague",
+    "plugins.misc",
+    "plugins.errorhandler",
+    "plugins.twitch",
+    "plugins.minecraft",
+    "plugins.markov",
 ]
 
 
@@ -36,9 +42,9 @@ bot = Aimbot()
 
 @bot.event
 async def on_ready():
-    print('Logged in as', bot.user.name)
-    print('User ID:', bot.user.id)
-    print('Invite URL: ' + discord.utils.oauth_url(client_id=bot.user.id))
+    print("Logged in as", bot.user.name)
+    print("User ID:", bot.user.id)
+    print("Invite URL: " + discord.utils.oauth_url(client_id=bot.user.id))
 
 
 @bot.event
@@ -54,10 +60,10 @@ async def time(ctx):
     Displays the bot's local time
     """
     localtime = str(datetime.datetime.now())
-    await ctx.send('The bot\'s local time is ' + localtime)
+    await ctx.send("The bot's local time is " + localtime)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     for plugin in load_plugins:
         try:
             bot.load_extension(plugin)
