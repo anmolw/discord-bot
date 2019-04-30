@@ -35,5 +35,11 @@ async def on_command_error(self, error, ctx):
     traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
 
+@commands.Cog.listener()
+async def on_error(self, error, ctx):
+    print("Ignoring uncaught exception", file=sys.stderr)
+    traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+
+
 def setup(bot):
     bot.add_cog(CommandErrorHandler(bot))

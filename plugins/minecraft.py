@@ -27,6 +27,11 @@ class Minecraft(commands.Cog):
         if ctx.invoked_subcommand is None:
             await ctx.send(f"Usage: minecraft/mc start|stop")
 
+    @minecraft.error
+    async def minecraft_error(self, ctx, error):
+        if isinstance(error, commands.CheckFailure):
+            await ctx.send("You do not have the permission to use this command.")
+
     async def initialize_status(self):
         droplet = await self.get_minecraft_droplet()
         if droplet is None:
