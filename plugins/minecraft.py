@@ -16,10 +16,16 @@ class Minecraft(commands.Cog):
         self.region_slug = "blr1"
         self.busy = False
         self.server_running = False
-        self.minecraft_channel = self.bot.get_channel(config.minecraft_channel)
+        self.initialized = False
         self.status_message_obj = None
-        self.bot.loop.create_task(self.initialize_status())
         # self.current_operation =
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        if not self.initialized:
+            self.minecraft_channel = self.bot.get_channel(config.minecraft_channel)
+            self.bot.loop.create_task(self.initialize_status())
+            self.initialized = True
 
     @checks.has_role("Minecraft")
     @commands.group(aliases=["mc"])

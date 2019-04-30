@@ -17,10 +17,11 @@ class Markov(commands.Cog):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
         self.models = {}
+
+    @commands.Cog.listener()
+    async def on_ready(self):
         for channel, count in config.markov_channels:
-            self.bot.loop.create_task(
-                self._create_model(self.bot.get_channel(channel), count)
-            )
+            await self._create_model(self.bot.get_channel(channel), count)
 
     def is_suitable(self, message):
         disallowed_prefixes = ["!", "~"]
