@@ -24,7 +24,7 @@ class Minecraft(commands.Cog):
     async def on_ready(self):
         if not self.initialized:
             self.minecraft_channel = self.bot.get_channel(config.minecraft_channel)
-            self.bot.loop.create_task(self.initialize_status())
+            await self.initialize_status()
             self.initialized = True
 
     @checks.has_role("Minecraft")
@@ -59,7 +59,8 @@ class Minecraft(commands.Cog):
         )
         if response.status == 200:
             response_json = await response.json()
-            if response_json["meta"]["total"] > 0:
+            print(response_json)
+            if len(response_json["droplets"]) > 0:
                 return response_json["droplets"][0]
 
     async def get_latest_snapshot(self):
