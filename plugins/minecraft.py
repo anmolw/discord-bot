@@ -90,6 +90,9 @@ class Minecraft(commands.Cog):
             self.server_running = True
             return
 
+        await ctx.send(
+            f"{ctx.author.mention} Starting the server. Check {self.minecraft_channel.mention} for task status."
+        )
         self.busy = True
         snapshot = await self.get_latest_snapshot()
         droplet_json = {
@@ -117,11 +120,11 @@ class Minecraft(commands.Cog):
             action = (await action_request.json())["action"]
             await self.wait_until_complete(action)
             new_droplet = await self.get_minecraft_droplet()
-            await self.update_status_embed(
-                "Server running", ip=new_droplet["networks"]["v4"][0]["ip_address"]
-            )
+            droplet_ip = new_droplet["networks"]["v4"][0]["ip_address"]
+            await self.update_status_embed("Server running", ip=droplet_ip)
             self.server_running = True
             self.busy = False
+            await ctx.send(f"{ctx.author.mention} Server is up at {droplet_ip}")
 
     @checks.has_role("Minecraft")
     @minecraft.command()
@@ -142,6 +145,9 @@ class Minecraft(commands.Cog):
             self.server_running = False
             return
 
+        await ctx.send(
+            f"{ctx.author.mention} stopping the server. Check {self.minecraft_channel.mention} for task status."
+        )
         self.busy = True
         current_snapshot = await self.get_latest_snapshot()
         response = await self.bot.http_session.post(
@@ -158,6 +164,7 @@ class Minecraft(commands.Cog):
         await self.update_status_embed("Server offline")
         self.server_running = False
         self.busy = False
+        await ctx.send(f"{ctx.author.mention} server stopped.")
 
     async def wait_until_complete(self, action):
         while action["status"] != "completed":
