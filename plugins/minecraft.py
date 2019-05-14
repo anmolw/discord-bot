@@ -94,6 +94,7 @@ class Minecraft(commands.Cog):
             f"{ctx.author.mention} Starting the server. Check {self.minecraft_channel.mention} for task status."
         )
         self.busy = True
+        await self.update_status_embed("Fetching snapshot")
         snapshot = await self.get_latest_snapshot()
         droplet_json = {
             "name": "minecraft",
@@ -114,6 +115,7 @@ class Minecraft(commands.Cog):
         if response.status == 202:
             json = await response.json()
             print(json)
+            await self.update_status_embed("Restoring snapshot")
             action_request = await self.bot.http_session.get(
                 json["links"]["actions"][0]["href"], headers=self.auth_header
             )
@@ -149,6 +151,7 @@ class Minecraft(commands.Cog):
             f"{ctx.author.mention} stopping the server. Check {self.minecraft_channel.mention} for task status."
         )
         self.busy = True
+        await self.update_status_embed("Sending shutdown command")
         current_snapshot = await self.get_latest_snapshot()
         response = await self.bot.http_session.post(
             self.api_url + f"droplets/{droplet['id']}/actions",
@@ -158,7 +161,9 @@ class Minecraft(commands.Cog):
         json = await response.json()
         shutdown_action = json["action"]
         await self.wait_until_complete(shutdown_action)
+        await self.update_status_embed("Creating snapshot")
         await self.create_snapshot(droplet)
+        await self.update_status_embed("Destroying VM")
         await self.destroy_droplet(droplet)
         await self.delete_snapshot(current_snapshot)
         await self.update_status_embed("Server offline")
