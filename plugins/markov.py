@@ -69,6 +69,17 @@ class Markov(commands.Cog):
                 result = "Couldn't generate a sentence \N{SLIGHTLY FROWNING FACE}"
             await ctx.send(result)
 
+    @commands.guild_only()
+    @markov.command()
+    async def include(self, ctx, include: str):
+        if ctx.channel in self.models:
+            result = self.models[ctx.channel].make_sentence_with_start(
+                include, strict=False
+            )
+            if not result:
+                result = "Couldn't generate a sentence \N{SLIGHTLY FROWNING FACE}"
+            await ctx.send(result)
+
     async def _create_model(self, channel, num_messages):
         corpus = ""
         count = 0
@@ -124,13 +135,14 @@ class Markov(commands.Cog):
 
             if random.uniform(0, 1.0) >= 0.85 or self.bot.user in message.mentions:
                 result = ""
-                for i in range(3):
+                for i in range(random.randint(1, 3)):
                     sentence = self.models[message.channel].make_sentence()
                     if result != "" and sentence is not None:
                         result = result + self.delim_for(result)
                     if sentence is not None:
                         result = result + sentence
-                await message.channel.send(result)
+                if result != "":
+                    await message.channel.send(result)
 
 
 def setup(bot):
