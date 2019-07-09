@@ -33,12 +33,18 @@ class Markov(commands.Cog):
 
     def delim_for(self, result):
         result = result.strip()
-        if result.endswith(".") or result.endswith("?"):
+        if result.endswith(".") or result.endswith("?") or result.endswith("!"):
             return " "
         else:
             return ". "
 
-    @commands.command()
+    @commands.group(aliases=["mk"])
+    async def markov(self, ctx):
+        pass
+
+    @commands.is_owner()
+    @commands.guild_only()
+    @markov.command()
     async def gen(self, ctx, num_sentences=3):
         if not ctx.channel in self.models:
             await self.bot.get_command("mkmodel").invoke(ctx)
@@ -53,6 +59,15 @@ class Markov(commands.Cog):
         if not result:
             result = "I couldn't generate any sentences :("
         await ctx.send(result)
+
+    @commands.guild_only()
+    @markov.command()
+    async def prompt(self, ctx, prompt: str):
+        if ctx.channel in self.models:
+            result = self.models[ctx.channel].make_sentence_with_start(prompt)
+            if not result:
+                result = "Couldn't generate a sentence \N{SLIGHTLY FROWNING FACE}"
+            await ctx.send(result)
 
     async def _create_model(self, channel, num_messages):
         corpus = ""
@@ -75,7 +90,8 @@ class Markov(commands.Cog):
         return count, authors
 
     @commands.is_owner()
-    @commands.command()
+    @commands.guild_only()
+    @markov.command()
     async def mkmodel(self, ctx, num_messages: int = 1000):
         count, authors = await self._create_model(ctx.channel, num_messages)
         result = ""
