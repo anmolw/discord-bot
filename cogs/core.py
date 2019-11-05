@@ -21,7 +21,7 @@ class Core(commands.Cog):
         if plugin:
             await ctx.send(f"Attempting to load {plugin}")
             try:
-                self.bot.load_extension("plugins." + plugin)
+                self.bot.load_extension("cogs." + plugin)
             except Exception as e:
                 await ctx.send(f"Could not load {plugin}")
                 traceback.print_exc(file=sys.stdout)
@@ -34,8 +34,8 @@ class Core(commands.Cog):
         if plugin:
             await ctx.send(f"Attempting reload of {plugin}")
             try:
-                self.bot.unload_extension("plugins." + plugin)
-                self.bot.load_extension("plugins." + plugin)
+                self.bot.unload_extension("cogs." + plugin)
+                self.bot.load_extension("cogs." + plugin)
             except Exception as e:
                 await ctx.send(f"Could not load {plugin}")
                 traceback.print_exc(file=sys.stdout)
@@ -48,7 +48,7 @@ class Core(commands.Cog):
         if plugin:
             await ctx.send(f"Attempting to unload {plugin}")
             try:
-                self.bot.unload_extension("plugins." + plugin)
+                self.bot.unload_extension("cogs." + plugin)
             except Exception as e:
                 await ctx.send(f"Could not unload {plugin}")
                 traceback.print_exc(file=sys.stdout)

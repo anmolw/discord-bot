@@ -8,7 +8,7 @@ import discord
 import discord.ext.commands
 
 import config
-from plugins.utils import checks, common
+from cogs.utils import checks, common
 
 try:
     import uvloop
@@ -18,15 +18,17 @@ else:
     print("Using uvloop")
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
-load_plugins = [
-    "plugins.core",
-    "plugins.trivia",
-    "plugins.rocketleague",
-    "plugins.misc",
-    "plugins.errorhandler",
-    "plugins.twitch",
-    "plugins.minecraft",
-    "plugins.markov",
+load_cogs = [
+    "cogs.core",
+    "cogs.trivia",
+    "cogs.misc",
+    "cogs.errorhandler",
+    "cogs.twitch",
+    "cogs.minecraft",
+    "cogs.markov",
+    "cogs.moderation",
+    "cogs.thonk",
+    "cogs.connectfour",
 ]
 
 
@@ -64,7 +66,7 @@ async def time(ctx):
 
 
 if __name__ == "__main__":
-    for plugin in load_plugins:
+    for plugin in load_cogs:
         try:
             bot.load_extension(plugin)
         except Exception as e:

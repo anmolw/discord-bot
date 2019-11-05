@@ -123,26 +123,39 @@ class Markov(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.channel in self.models and self.is_suitable(message):
-            temp_model = markovify.NewlineText(message.content)
-            new_model = await self.bot.loop.run_in_executor(
-                None,
-                markovify.combine,
-                [temp_model, self.models[message.channel]],
-                [1, 1],
-            )
-            self.models[message.channel] = new_model
+        if message.content.strip().lower().startswith(
+            "good bot"
+        ) or message.content.strip().lower().startswith(
+            f"{self.bot.user.mention} good bot"
+        ):
+            async for last_msg in message.channel.history(limit=1, before=message):
+                if (
+                    last_msg.author == self.bot.user
+                    and not "good human" in last_msg.content.lower()
+                ):
+                    await message.channel.send(f"{message.author.mention} good human")
 
-            if random.uniform(0, 1.0) >= 0.85 or self.bot.user in message.mentions:
-                result = ""
-                for i in range(random.randint(1, 3)):
-                    sentence = self.models[message.channel].make_sentence()
-                    if result != "" and sentence is not None:
-                        result = result + self.delim_for(result)
-                    if sentence is not None:
-                        result = result + sentence
-                if result != "":
-                    await message.channel.send(result)
+        else:
+            if message.channel in self.models and self.is_suitable(message):
+                temp_model = markovify.NewlineText(message.content)
+                new_model = await self.bot.loop.run_in_executor(
+                    None,
+                    markovify.combine,
+                    [temp_model, self.models[message.channel]],
+                    [1, 1],
+                )
+                self.models[message.channel] = new_model
+
+                if random.uniform(0, 1.0) >= 0.85 or self.bot.user in message.mentions:
+                    result = ""
+                    for i in range(random.randint(1, 3)):
+                        sentence = self.models[message.channel].make_sentence()
+                        if result != "" and sentence is not None:
+                            result = result + self.delim_for(result)
+                        if sentence is not None:
+                            result = result + sentence
+                    if result != "":
+                        await message.channel.send(result)
 
 
 def setup(bot):

@@ -4,3 +4,4 @@ __pycache__
 .vscode
 __MACOSX
 .idea
+.python-version

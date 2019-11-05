@@ -177,7 +177,13 @@ class Minecraft(commands.Cog):
                 self.api_url + f"actions/{action['id']}", headers=self.auth_header
             )
             json = await response.json()
-            action = json["action"]
+            print(f"action json: {json}")
+            try:
+                action = json["action"]
+            except KeyError:
+                return
+            if action["status"] == "completed":
+                return
             await asyncio.sleep(10)
 
     async def create_snapshot(self, droplet):
