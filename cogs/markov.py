@@ -24,7 +24,7 @@ class Markov(commands.Cog):
             await self._create_model(self.bot.get_channel(channel), count)
 
     def is_suitable(self, message):
-        disallowed_prefixes = ["!", "~"]
+        disallowed_prefixes = ["!", "~", "p!"]
         for prefix in disallowed_prefixes:
             if message.content.startswith(prefix):
                 return False
