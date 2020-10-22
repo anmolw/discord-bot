@@ -23,8 +23,6 @@ load_cogs = [
     "cogs.trivia",
     "cogs.misc",
     "cogs.errorhandler",
-    "cogs.twitch",
-    "cogs.minecraft",
     "cogs.markov",
     "cogs.moderation",
     "cogs.thonk",
@@ -72,5 +70,12 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Could not load {plugin}: {type(e).__name__}")
             traceback.print_exc(file=sys.stdout)
-
-    bot.run(config.bot_token)
+    try:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(bot.start(config.bot_token))
+        # bot.run(config.bot_token)
+    except KeyboardInterrupt:
+        print("Received keyboard interrupt, terminating")
+        loop.run_until_complete(bot.logout())
+    finally:
+        loop.close()

@@ -83,6 +83,7 @@ class Core(commands.Cog):
     async def evaluate(self, ctx, *, expression):
         env = {
             "bot": self.bot,
+            "ctx": ctx,
             "message": ctx.message,
             "channel": ctx.channel,
             "author": ctx.message.author,
@@ -99,13 +100,14 @@ class Core(commands.Cog):
     async def execute(self, ctx, *, expression):
         env = {
             "bot": self.bot,
+            "ctx": ctx,
             "message": ctx.message,
             "channel": ctx.channel,
             "author": ctx.message.author,
             "guild": ctx.guild,
         }
         env.update(globals())
-        result = exec(expression)
+        result = exec(expression, env)
         if result:
             await ctx.send(f"Result: {result}")
 

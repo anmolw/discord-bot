@@ -24,7 +24,7 @@ class Markov(commands.Cog):
             await self._create_model(self.bot.get_channel(channel), count)
 
     def is_suitable(self, message):
-        disallowed_prefixes = ["!", "~", "p!"]
+        disallowed_prefixes = ["!", "~", "p!", "$"]
         for prefix in disallowed_prefixes:
             if message.content.startswith(prefix):
                 return False
@@ -40,7 +40,8 @@ class Markov(commands.Cog):
 
     @commands.group(aliases=["mk"])
     async def markov(self, ctx):
-        pass
+        if ctx.invoked_subcommand is None:
+            await self.bot.get_command("include").invoke(ctx)
 
     @commands.is_owner()
     @commands.guild_only()
@@ -107,6 +108,7 @@ class Markov(commands.Cog):
         count, authors = await self._create_model(ctx.channel, num_messages)
         result = ""
         limit = 3
+        n = 0
         for author in authors:
             n += 1
             result = (
