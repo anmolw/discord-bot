@@ -27,6 +27,7 @@ load_cogs = [
     "cogs.moderation",
     "cogs.thonk",
     "cogs.connectfour",
+    "cogs.xkcd"
 ]
 
 
