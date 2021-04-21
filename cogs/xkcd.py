@@ -16,8 +16,11 @@ class XKCD(commands.Cog):
         """
         Fetch the latest xkcd comic. Can also be passed an id to fetch a specific comic
         """
+
+        lowercaseArgs = [elem.lower() for elem in args]
+
         json = {}
-        if "random" in args:
+        if "random" in lowercaseArgs:
             json = await self.getRandomComic()
         else:
             json = await self.fetchComic(id)

@@ -27,13 +27,16 @@ load_cogs = [
     "cogs.moderation",
     "cogs.thonk",
     "cogs.connectfour",
-    "cogs.xkcd"
+    "cogs.xkcd",
 ]
 
 
 class Aimbot(discord.ext.commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix="!")
+        intents = discord.Intents.default()
+        intents.members = True
+        intents.presences = True
+        super().__init__(command_prefix="!", intents=intents)
         self.http_session = aiohttp.ClientSession(loop=self.loop)
         self.startup_time = datetime.datetime.utcnow()
 
