@@ -7,14 +7,14 @@ name = "pypi"
 "discord.py" = {version = "~=1.7.0",extras = ["voice"]}
 aiohttp = "*"
 markovify = "*"
-uvloop = "*"
+uvloop = {version = "*", sys_platform = "== 'linux'"}
 
 [dev-packages]
 pylint = "*"
 black = "*"
 
 [requires]
-python_version = "3.8.6"
+python_version = "3.9.4"
 
 [pipenv]
 allow_prereleases = true
