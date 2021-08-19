@@ -10,14 +10,6 @@ import discord.ext.commands
 import config
 from cogs.utils import checks, common
 
-try:
-    import uvloop
-except ImportError:
-    print("Using default asyncio event loop")
-else:
-    print("Using uvloop")
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
 load_cogs = [
     "cogs.core",
     "cogs.trivia",
@@ -25,7 +17,6 @@ load_cogs = [
     "cogs.errorhandler",
     "cogs.markov",
     "cogs.moderation",
-    "cogs.thonk",
     "cogs.connectfour",
     "cogs.xkcd",
 ]
@@ -40,40 +31,29 @@ class Aimbot(discord.ext.commands.Bot):
         self.http_session = aiohttp.ClientSession(loop=self.loop)
         self.startup_time = datetime.datetime.utcnow()
 
+    async def on_message(self, message) -> None:
+        if message.author.bot:
+            return
+        await self.process_commands(message)
 
-bot = Aimbot()
-
-
-@bot.event
-async def on_ready():
-    print("Logged in as", bot.user.name)
-    print("User ID:", bot.user.id)
-    print("Invite URL: " + discord.utils.oauth_url(client_id=bot.user.id))
-
-
-@bot.event
-async def on_message(message):
-    if message.author.bot:
-        return
-    await bot.process_commands(message)
+    async def on_ready(self) -> None:
+        print("Logged in as", self.user.name)
+        print("User ID:", self.user.id)
+        print("Invite URL: " + discord.utils.oauth_url(client_id=self.user.id))
 
 
-@bot.command()
-async def time(ctx):
-    """
-    Displays the bot's local time
-    """
-    localtime = str(datetime.datetime.now())
-    await ctx.send("The bot's local time is " + localtime)
-
-
-if __name__ == "__main__":
+def setup(bot: Aimbot) -> None:
     for plugin in load_cogs:
         try:
             bot.load_extension(plugin)
         except Exception as e:
             print(f"Could not load {plugin}: {type(e).__name__}")
             traceback.print_exc(file=sys.stdout)
+
+
+if __name__ == "__main__":
+    bot = Aimbot()
+    setup(bot)
     try:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(bot.start(config.bot_token))
