@@ -87,10 +87,6 @@ class Misc(commands.Cog):
         ]
         await ctx.send(f"{ctx.author.mention} {choice(responses)}")
 
-    # async def on_member_join(self, member):
-    #     if not member.bot:
-    #         await self.bot.send_message(discord.Object(id=config.greet_channel), f'Welcome to the server, {member.mention}!')
-
 
 def setup(bot):
     bot.add_cog(Misc(bot))

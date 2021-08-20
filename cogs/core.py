@@ -34,10 +34,9 @@ class Core(commands.Cog):
         if plugin:
             await ctx.send(f"Attempting reload of {plugin}")
             try:
-                self.bot.unload_extension("cogs." + plugin)
-                self.bot.load_extension("cogs." + plugin)
+                self.bot.reload_extension("cogs." + plugin)
             except Exception as e:
-                await ctx.send(f"Could not load {plugin}")
+                await ctx.send(f"Could not reload {plugin}")
                 traceback.print_exc(file=sys.stdout)
             else:
                 await ctx.send("\N{WHITE HEAVY CHECK MARK}")

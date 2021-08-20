@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-screen -dmS discord pipenv run python3 ./bot.py
+screen -dmS discord poetry run python3 ./bot.py
