@@ -2,6 +2,7 @@ import asyncio
 import random
 
 from operator import itemgetter
+from typing import Tuple, Union
 
 import discord
 import markovify
@@ -16,14 +17,16 @@ class Markov(commands.Cog):
 
     def __init__(self, bot):
         self.bot: commands.Bot = bot
-        self.models = {}
+        self.model = None
+        self.markov_channels = set()
 
     @commands.Cog.listener()
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         for channel, count in config.markov_channels:
             await self._create_model(self.bot.get_channel(channel), count)
+            self.markov_channels.add(channel)
 
-    def is_suitable(self, message):
+    def is_suitable(self, message: discord.Message) -> bool:
         disallowed_prefixes = ["!", "~", "p!", "$"]
         for prefix in disallowed_prefixes:
             if message.content.startswith(prefix):
@@ -31,57 +34,79 @@ class Markov(commands.Cog):
         if not message.author.bot:
             return True
 
-    def delim_for(self, result):
+    def process_message(self, message: discord.Message) -> str:
+        result = message.content.replace(
+            self.bot.user.mention, message.author.mention
+        ).replace(f"<@!{self.bot.user.id}>", message.author.mention)
+        return result
+
+    def delim_for(self, result) -> str:
         result = result.strip()
         if result.endswith(".") or result.endswith("?") or result.endswith("!"):
             return " "
         else:
             return ". "
 
+    async def add_to_model(self, message) -> None:
+        temp_model = markovify.NewlineText(self.process_message(message))
+        new_model = await self.bot.loop.run_in_executor(
+            None,
+            markovify.combine,
+            [temp_model, self.model],
+            [1, 1],
+        )
+        self.model = new_model
+
+    def generate_message(self, prompt=None, num_sentences=3) -> Union[str, None]:
+        if self.model is None:
+            return
+        result = ""
+        for i in range(1, num_sentences):
+            if prompt is not None:
+                sentence = self.model.make_sentence_with_start(prompt, strict=False)
+            else:
+                sentence = self.model.make_sentence()
+            if result != "" and sentence is not None:
+                result = result + self.delim_for(result)
+            if sentence is not None:
+                result = result + sentence
+        return result
+
     @commands.group(aliases=["mk"])
-    async def markov(self, ctx):
+    async def markov(self, ctx) -> None:
         if ctx.invoked_subcommand is None:
             await self.bot.get_command("include").invoke(ctx)
 
     @commands.is_owner()
     @commands.guild_only()
     @markov.command()
-    async def gen(self, ctx, num_sentences=3):
-        if not ctx.channel in self.models:
+    async def gen(self, ctx, num_sentences=3) -> None:
+        if not ctx.channel in self.markov_channels:
             await self.bot.get_command("mkmodel").invoke(ctx)
-        result = ""
-        for i in range(3):
-            sentence = self.models[ctx.channel].make_sentence()
-            print(sentence)
-            if result != "" and sentence is not None:
-                result = result + self.delim_for(result)
-            if sentence is not None:
-                result = result + sentence
+        result = self.generate_message()
         if not result:
             result = "I couldn't generate any sentences :("
         await ctx.send(result)
 
     @commands.guild_only()
     @markov.command()
-    async def prompt(self, ctx, prompt: str):
-        if ctx.channel in self.models:
-            result = self.models[ctx.channel].make_sentence_with_start(prompt)
+    async def prompt(self, ctx, prompt: str) -> None:
+        if ctx.channel in self.markov_channels:
+            result = self.model.make_sentence_with_start(prompt)
             if not result:
                 result = "Couldn't generate a sentence \N{SLIGHTLY FROWNING FACE}"
             await ctx.send(result)
 
     @commands.guild_only()
     @markov.command()
-    async def include(self, ctx, include: str):
-        if ctx.channel in self.models:
-            result = self.models[ctx.channel].make_sentence_with_start(
-                include, strict=False
-            )
+    async def include(self, ctx, include: str) -> None:
+        if ctx.channel in self.markov_channels:
+            result = self.model.make_sentence_with_start(include, strict=False)
             if not result:
                 result = "Couldn't generate a sentence \N{SLIGHTLY FROWNING FACE}"
             await ctx.send(result)
 
-    async def _create_model(self, channel, num_messages):
+    async def _create_model(self, channel, num_messages) -> Tuple[int, list]:
         corpus = ""
         count = 0
         authors = {}
@@ -91,20 +116,20 @@ class Markov(commands.Cog):
                     authors[message.author] = 1
                 else:
                     authors[message.author] += 1
-                corpus = corpus + "\n" + message.content
+                corpus = corpus + "\n" + self.process_message(message)
                 count += 1
 
         authors = sorted(authors.items(), key=itemgetter(1), reverse=True)
         markov_model = await self.bot.loop.run_in_executor(
             None, markovify.NewlineText, corpus
         )
-        self.models[channel] = markov_model
+        self.model = markov_model
         return count, authors
 
     @commands.is_owner()
     @commands.guild_only()
     @markov.command()
-    async def mkmodel(self, ctx, num_messages: int = 1000):
+    async def mkmodel(self, ctx, num_messages: int = 1000) -> None:
         count, authors = await self._create_model(ctx.channel, num_messages)
         result = ""
         limit = 3
@@ -124,11 +149,13 @@ class Markov(commands.Cog):
         await ctx.send(output)
 
     @commands.Cog.listener()
-    async def on_message(self, message):
-        if message.content.strip().lower().startswith(
-            "good bot"
-        ) or message.content.strip().lower().startswith(
-            f"{self.bot.user.mention} good bot"
+    async def on_message(self, message: discord.Message) -> None:
+        if (
+            message.content.strip().lower().startswith("good bot")
+            or message.content.strip()
+            .lower()
+            .startswith(f"{self.bot.user.mention} good bot")
+            and message.guild is not None
         ):
             async for last_msg in message.channel.history(limit=1, before=message):
                 if (
@@ -138,27 +165,14 @@ class Markov(commands.Cog):
                     await message.channel.send(f"{message.author.mention} good human")
 
         else:
-            if message.channel in self.models and self.is_suitable(message):
-                temp_model = markovify.NewlineText(message.content)
-                new_model = await self.bot.loop.run_in_executor(
-                    None,
-                    markovify.combine,
-                    [temp_model, self.models[message.channel]],
-                    [1, 1],
-                )
-                self.models[message.channel] = new_model
+            if message.channel.id in self.markov_channels and self.is_suitable(message):
+                self.add_to_model(message)
 
                 if random.uniform(0, 1.0) >= 0.85 or self.bot.user in message.mentions:
-                    result = ""
-                    for i in range(random.randint(1, 3)):
-                        sentence = self.models[message.channel].make_sentence()
-                        if result != "" and sentence is not None:
-                            result = result + self.delim_for(result)
-                        if sentence is not None:
-                            result = result + sentence
-                    if result != "":
+                    result = self.generate_message()
+                    if result is not None:
                         await message.channel.send(result)
 
 
-def setup(bot):
+def setup(bot) -> None:
     bot.add_cog(Markov(bot))

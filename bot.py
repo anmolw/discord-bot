@@ -60,6 +60,6 @@ if __name__ == "__main__":
         # bot.run(config.bot_token)
     except KeyboardInterrupt:
         print("Received keyboard interrupt, terminating")
-        loop.run_until_complete(bot.logout())
+        loop.run_until_complete(bot.close())
     finally:
         loop.close()
