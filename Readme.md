@@ -30,7 +30,7 @@ Features:
 3. Create a virtualenv and install the project dependencies via poetry
 
     ```sh 
-    $ poetry install
+    $ poetry install --no-dev
     ```
 
 ## Configuration
