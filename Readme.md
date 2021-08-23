@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/Python-3.9-blue.svg)
 
-A simple discord bot written using discord.py. I wrote this to familiarize myself with asynchronous programming & python.
+A multipurpose discord bot written using discord.py. I wrote this to familiarize myself with asynchronous programming & python.
 
 Features:
 
@@ -10,7 +10,7 @@ Features:
 
 - Lets you play connect four & trivia in a discord text channel.
 
-- Automatically adds spotify links posted in a server into a playlist specific to that server.
+- Automatically adds spotify links posted in a server into a playlist specific to that server. (This feature is currently WIP)
 
 - Fetches xkcd comics by ID or presents a random comic
 
@@ -24,7 +24,7 @@ Features:
 2. Clone the repository
 
     ```sh
-    $ git clone https://github.com/anmolw/discord-bot.git
+    $ git clone https://git.anmolw.com/anmol/discord-bot.git
     ```
     
 3. Create a virtualenv and install the project dependencies via poetry
@@ -39,7 +39,7 @@ Edit config.py. Set `bot_token` to the token obtained from discord's developer p
 
 ### Configuring markov generation channels
 
-Enable developer mode in your discord client. Copy the channel ids for channels which you want to use for markov text generation.
+Enable developer mode in your discord client. Copy the channel ids for channels which you want to use for markov text generation. Edit `markov_channels` in config.py, and add a tuple to this list for each channel with the following format: `(channelID, num)`, where num represents the number of past messages to add to the model upon initialization.
 
 ### Setting up the spotify integration
 
